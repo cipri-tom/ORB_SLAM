@@ -56,7 +56,7 @@ Frame::Frame(const Frame &frame)
 Frame::Frame(cv::Mat &im_, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef)
     :mpORBvocabulary(voc),mpORBextractor(extractor), im(im_),mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone())
 {
-    // Exctract ORB  
+    // Exctract ORB
     (*mpORBextractor)(im,cv::Mat(),mvKeys,mDescriptors);
 
     N = mvKeys.size();
@@ -86,7 +86,7 @@ Frame::Frame(cv::Mat &im_, const double &timeStamp, ORBextractor* extractor, ORB
     }
 
 
-    mnId=nNextId++;    
+    mnId=nNextId++;
 
     //Scale Levels Info
     mnScaleLevels = mpORBextractor->GetLevels();
@@ -98,7 +98,7 @@ Frame::Frame(cv::Mat &im_, const double &timeStamp, ORBextractor* extractor, ORB
     mvLevelSigma2[0]=1.0f;
     for(int i=1; i<mnScaleLevels; i++)
     {
-        mvScaleFactors[i]=mvScaleFactors[i-1]*mfScaleFactor;        
+        mvScaleFactors[i]=mvScaleFactors[i-1]*mfScaleFactor;
         mvLevelSigma2[i]=mvScaleFactors[i]*mvScaleFactors[i];
     }
 
@@ -128,7 +128,7 @@ Frame::Frame(cv::Mat &im_, const double &timeStamp, ORBextractor* extractor, ORB
 }
 
 void Frame::UpdatePoseMatrices()
-{ 
+{
     mRcw = mTcw.rowRange(0,3).colRange(0,3);
     mtcw = mTcw.rowRange(0,3).col(3);
     mOw = -mRcw.t()*mtcw;
@@ -139,7 +139,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     pMP->mbTrackInView = false;
 
     // 3D in absolute coordinates
-    cv::Mat P = pMP->GetWorldPos(); 
+    cv::Mat P = pMP->GetWorldPos();
 
     // 3D in camera coordinates
     const cv::Mat Pc = mRcw*P+mtcw;
@@ -323,9 +323,9 @@ void Frame::ComputeImageBounds()
     if(mDistCoef.at<float>(0)!=0.0)
     {
         cv::Mat mat(4,2,CV_32F);
-        mat.at<float>(0,0)=0.0; mat.at<float>(0,1)=0.0;
+        mat.at<float>(0,0)=0.0;     mat.at<float>(0,1)=0.0;
         mat.at<float>(1,0)=im.cols; mat.at<float>(1,1)=0.0;
-        mat.at<float>(2,0)=0.0; mat.at<float>(2,1)=im.rows;
+        mat.at<float>(2,0)=0.0;     mat.at<float>(2,1)=im.rows;
         mat.at<float>(3,0)=im.cols; mat.at<float>(3,1)=im.rows;
 
         // Undistort corners
@@ -333,10 +333,10 @@ void Frame::ComputeImageBounds()
         cv::undistortPoints(mat,mat,mK,mDistCoef,cv::Mat(),mK);
         mat=mat.reshape(1);
 
-        mnMinX = min(floor(mat.at<float>(0,0)),floor(mat.at<float>(2,0)));
-        mnMaxX = max(ceil(mat.at<float>(1,0)),ceil(mat.at<float>(3,0)));
-        mnMinY = min(floor(mat.at<float>(0,1)),floor(mat.at<float>(1,1)));
-        mnMaxY = max(ceil(mat.at<float>(2,1)),ceil(mat.at<float>(3,1)));
+        mnMinX = min(floor(mat.at<float>(0,0)), floor(mat.at<float>(2,0)));
+        mnMaxX = max( ceil(mat.at<float>(1,0)),  ceil(mat.at<float>(3,0)));
+        mnMinY = min(floor(mat.at<float>(0,1)), floor(mat.at<float>(1,1)));
+        mnMaxY = max( ceil(mat.at<float>(2,1)),  ceil(mat.at<float>(3,1)));
 
     }
     else

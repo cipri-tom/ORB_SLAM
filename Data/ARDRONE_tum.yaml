@@ -1,0 +1,54 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# ARDRONE 2 Front Camera Parameters
+# https://github.com/tum-vision/ardrone_autonomy/blob/master/calibrations/ardrone2_front/ost.ini
+#
+# Camera matrix:
+# [ fx   0  cx ]   [ 561.999146   0.000000 307.433982 ]
+# [  0  fy  cy ] = [   0.000000 561.782697 190.144373 ]
+# [  0   0   1 ]   [   0.000000   0.000000   1.000000 ]
+#
+# Distortion:
+# [ k1 k2 p1 p2 k3 ] = [ -0.507580 0.249110 0.000579 0.000996 0.000000 ]
+#
+# What about Projection parameters ?
+#--------------------------------------------------------------------------------------------
+
+# Camera calibration and distortion parameters (OpenCV)
+Camera.fx: 561.999146
+Camera.fy: 561.782697
+Camera.cx: 307.433982
+Camera.cy: 190.144373
+
+Camera.k1: -0.507580
+Camera.k2: 0.249110
+Camera.p1: 0.000579
+Camera.p2: 0.000996
+Camera.k3: 0.000000
+
+# Camera frames per second
+Camera.fps: 30.0
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid
+ORBextractor.nLevels: 8
+
+
+# ORB Extractor: Score to sort features. 0 -> Harris Score, 1 -> FAST Score
+ORBextractor.nScoreType: 1
+
+# Constant Velocity Motion Model (0 - disabled, 1 - enabled [recommended])
+UseMotionModel: 1

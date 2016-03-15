@@ -18,13 +18,13 @@
 * along with ORB-SLAM. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include<iostream>
-#include<fstream>
-#include<ros/ros.h>
-#include<ros/package.h>
-#include<boost/thread.hpp>
+#include <iostream>
+#include <fstream>
+#include <ros/ros.h>
+#include <ros/package.h>
+#include <boost/thread.hpp>
 
-#include<opencv2/core/core.hpp>
+#include <opencv2/core/core.hpp>
 
 #include "Tracking.h"
 #include "FramePublisher.h"
@@ -34,6 +34,7 @@
 #include "LoopClosing.h"
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
+#include "MapPoint.h"
 
 
 #include "Converter.h"
@@ -87,13 +88,13 @@ int main(int argc, char **argv)
     ORB_SLAM::ORBVocabulary Vocabulary;
     Vocabulary.load(fsVoc);
     */
-    
-    // New version to load vocabulary from text file "Data/ORBvoc.txt". 
+
+    // New version to load vocabulary from text file "Data/ORBvoc.txt".
     // If you have an own .yml vocabulary, use the function
     // saveToTextFile in Thirdparty/DBoW2/DBoW2/TemplatedVocabulary.h
     string strVocFile = ros::package::getPath("ORB_SLAM")+"/"+argv[1];
     cout << endl << "Loading ORB Vocabulary. This could take a while." << endl;
-    
+
     ORB_SLAM::ORBVocabulary Vocabulary;
     bool bVocLoad = Vocabulary.loadFromTextFile(strVocFile);
 
@@ -183,6 +184,30 @@ int main(int argc, char **argv)
 
     }
     f.close();
+
+    /* ---------------------------------------------------------------------- */
+
+    cout << endl << "Saving Map Points to MapPoints.xyz" << endl;
+    strFile = ros::package::getPath("ORB_SLAM") + "/" + "MapPoints.xyz";
+    f.open(strFile.c_str());
+    f << fixed;
+
+    vector<ORB_SLAM::MapPoint*> vMPs = World.GetAllMapPoints();
+    for (vector<ORB_SLAM::MapPoint*>::iterator point = vMPs.begin(); point != vMPs.end(); ++point) {
+        if ((*point)->isBad())
+            continue;
+        cv::Mat pos = (*point)->GetWorldPos();
+        cv::Mat nor = (*point)->GetNormal();
+        f << setprecision(6) << pos.at<float>(0) << ' '
+          << setprecision(6) << pos.at<float>(1) << ' '
+          << setprecision(6) << pos.at<float>(2) << ' '
+          // NORMAL
+          << setprecision(6) << nor.at<float>(0) << ' '
+          << setprecision(6) << nor.at<float>(1) << ' '
+          << setprecision(6) << nor.at<float>(2) << '\n';
+    }
+    f.close();
+
 
     ros::shutdown();
 

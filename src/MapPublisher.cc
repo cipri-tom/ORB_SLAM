@@ -108,12 +108,14 @@ MapPublisher::MapPublisher(Map* pMap):mpMap(pMap), mbCameraUpdated(false)
 
     //Configure Publisher
     publisher = nh.advertise<visualization_msgs::Marker>("ORB_SLAM/Map", 10);
+    raw_pub   = nh.advertise<ORB_SLAM::point_array>("ORB_SLAM/Raw_Map", 10);
 
     publisher.publish(mPoints);
     publisher.publish(mReferencePoints);
     publisher.publish(mCovisibilityGraph);
     publisher.publish(mKeyFrames);
     publisher.publish(mCurrentCamera);
+    raw_pub.publish(vRawMap);
 }
 
 void MapPublisher::Refresh()
@@ -130,11 +132,11 @@ void MapPublisher::Refresh()
         vector<MapPoint*> vMapPoints = mpMap->GetAllMapPoints();
         vector<MapPoint*> vRefMapPoints = mpMap->GetReferenceMapPoints();
 
-        PublishMapPoints(vMapPoints, vRefMapPoints);   
+        PublishMapPoints(vMapPoints, vRefMapPoints);
         PublishKeyFrames(vKeyFrames);
 
         mpMap->ResetUpdated();
-    }    
+    }
 }
 
 void MapPublisher::PublishMapPoints(const vector<MapPoint*> &vpMPs, const vector<MapPoint*> &vpRefMPs)
@@ -155,6 +157,7 @@ void MapPublisher::PublishMapPoints(const vector<MapPoint*> &vpMPs, const vector
         p.z=pos.at<float>(2);
 
         mPoints.points.push_back(p);
+        vRawMap.points.push_back(p);
     }
 
     for(set<MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
@@ -168,12 +171,16 @@ void MapPublisher::PublishMapPoints(const vector<MapPoint*> &vpMPs, const vector
         p.z=pos.at<float>(2);
 
         mReferencePoints.points.push_back(p);
+        vRawMap.points.push_back(p);
     }
 
     mPoints.header.stamp = ros::Time::now();
     mReferencePoints.header.stamp = ros::Time::now();
+    vRawMap.header.stamp = ros::Time::now();
+
     publisher.publish(mPoints);
     publisher.publish(mReferencePoints);
+    raw_pub.publish(vRawMap);
 }
 
 void MapPublisher::PublishKeyFrames(const vector<KeyFrame*> &vpKFs)

@@ -21,23 +21,23 @@
 #ifndef TRACKING_H
 #define TRACKING_H
 
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
-#include<sensor_msgs/Image.h>
-#include<sensor_msgs/image_encodings.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
 
-#include"FramePublisher.h"
-#include"Map.h"
-#include"LocalMapping.h"
-#include"LoopClosing.h"
-#include"Frame.h"
+#include "FramePublisher.h"
+#include "Map.h"
+#include "LocalMapping.h"
+#include "LoopClosing.h"
+#include "Frame.h"
 #include "ORBVocabulary.h"
-#include"KeyFrameDatabase.h"
-#include"ORBextractor.h"
+#include "KeyFrameDatabase.h"
+#include "ORBextractor.h"
 #include "Initializer.h"
 #include "MapPublisher.h"
 
-#include<tf/transform_broadcaster.h>
+#include <tf/transform_broadcaster.h>
 
 
 namespace ORB_SLAM
@@ -49,7 +49,7 @@ class LocalMapping;
 class LoopClosing;
 
 class Tracking
-{  
+{
 
 public:
     Tracking(ORBVocabulary* pVoc, FramePublisher* pFramePublisher, MapPublisher* pMapPublisher, Map* pMap, string strSettingPath);
@@ -73,7 +73,7 @@ public:
     void ForceRelocalisation();
 
     eTrackingState mState;
-    eTrackingState mLastProcessedState;    
+    eTrackingState mLastProcessedState;
 
     // Current Frame
     Frame mCurrentFrame;
@@ -102,7 +102,7 @@ protected:
     bool TrackWithMotionModel();
 
     bool RelocalisationRequested();
-    bool Relocalisation();    
+    bool Relocalisation();
 
     void UpdateReference();
     void UpdateReferencePoints();
