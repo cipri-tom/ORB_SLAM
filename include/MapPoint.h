@@ -21,11 +21,11 @@
 #ifndef MAPPOINT_H
 #define MAPPOINT_H
 
-#include<opencv2/core/core.hpp>
-#include"KeyFrame.h"
-#include"Map.h"
+#include <opencv2/core/core.hpp>
+#include "KeyFrame.h"
+#include "Map.h"
 
-#include<boost/thread.hpp>
+#include <boost/thread.hpp>
 
 
 namespace ORB_SLAM
@@ -46,6 +46,7 @@ public:
 
     cv::Mat GetNormal();
     KeyFrame* GetReferenceKeyFrame();
+    cv::Vec3b GetColorInRefKF();
 
     std::map<KeyFrame*,size_t> GetObservations();
     int Observations();
@@ -97,7 +98,7 @@ public:
     long unsigned int mnCorrectedByKF;
     long unsigned int mnCorrectedReference;
 
-protected:    
+protected:
 
      // Position in absolute coordinates
      cv::Mat mWorldPos;

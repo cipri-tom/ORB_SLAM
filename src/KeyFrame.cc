@@ -31,7 +31,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mnFrameId(F.mnId),  mTimeStamp(F.mTimeStamp), mfGridElementWidthInv(F.mfGridElementWidthInv),
     mfGridElementHeightInv(F.mfGridElementHeightInv), mnTrackReferenceForFrame(0),mnBALocalForKF(0), mnBAFixedForKF(0),
     mnLoopQuery(0), mnRelocQuery(0),fx(F.fx), fy(F.fy), cx(F.cx), cy(F.cy), mBowVec(F.mBowVec),
-    im(F.im), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX), mnMaxY(F.mnMaxY), mK(F.mK),
+    im(F.im), im_rgb(F.im_rgb), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX), mnMaxY(F.mnMaxY), mK(F.mK),
     mvKeys(F.mvKeys), mvKeysUn(F.mvKeysUn), mDescriptors(F.mDescriptors.clone()),
     mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB), mpORBvocabulary(F.mpORBvocabulary), mFeatVec(F.mFeatVec),
     mbFirstConnection(true), mpParent(NULL), mbNotErase(false), mbToBeErased(false), mbBad(false),
@@ -50,7 +50,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
             mGrid[i][j] = F.mGrid[i][j];
     }
 
-    SetPose(F.mTcw);    
+    SetPose(F.mTcw);
 }
 
 void KeyFrame::ComputeBoW()
@@ -156,7 +156,7 @@ void KeyFrame::UpdateBestCovisibles()
     }
 
     mvpOrderedConnectedKeyFrames = vector<KeyFrame*>(lKFs.begin(),lKFs.end());
-    mvOrderedWeights = vector<int>(lWs.begin(), lWs.end());    
+    mvOrderedWeights = vector<int>(lWs.begin(), lWs.end());
 }
 
 set<KeyFrame*> KeyFrame::GetConnectedKeyFrames()
@@ -276,6 +276,11 @@ MapPoint* KeyFrame::GetMapPoint(const size_t &idx)
     return mvpMapPoints[idx];
 }
 
+cv::KeyPoint KeyFrame::GetKeyPoint(const size_t &idx) const
+{
+    return mvKeys[idx];
+}
+
 cv::KeyPoint KeyFrame::GetKeyPointUn(const size_t &idx) const
 {
     return mvKeysUn[idx];
@@ -327,6 +332,12 @@ cv::Mat KeyFrame::GetImage()
 {
     boost::mutex::scoped_lock lock(mMutexImage);
     return im.clone();
+}
+
+cv::Mat KeyFrame::GetImageRGB()
+{
+    boost::mutex::scoped_lock lock(mMutexImage);
+    return im_rgb.clone();
 }
 
 void KeyFrame::UpdateConnections()
@@ -495,7 +506,7 @@ void KeyFrame::SetErase()
 
 
 void KeyFrame::SetBadFlag()
-{   
+{
     {
         boost::mutex::scoped_lock lock(mMutexConnections);
         if(mnId==0)

@@ -45,13 +45,14 @@ class Frame
 public:
     Frame();
     Frame(const Frame &frame);
-    Frame(cv::Mat &im, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef);
+    Frame(cv::Mat &im, cv::Mat &im_rgb, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef);
 
     ORBVocabulary* mpORBvocabulary;
     ORBextractor* mpORBextractor;
 
     // Frame image
     cv::Mat im;
+    cv::Mat im_rgb;
 
     // Frame timestamp
     double mTimeStamp;

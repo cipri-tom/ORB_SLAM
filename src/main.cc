@@ -198,13 +198,22 @@ int main(int argc, char **argv)
             continue;
         cv::Mat pos = (*point)->GetWorldPos();
         cv::Mat nor = (*point)->GetNormal();
+        cv::Vec3b colour = (*point)->GetColorInRefKF();
+
+          // POSITION
         f << setprecision(6) << pos.at<float>(0) << ' '
           << setprecision(6) << pos.at<float>(1) << ' '
           << setprecision(6) << pos.at<float>(2) << ' '
           // NORMAL
           << setprecision(6) << nor.at<float>(0) << ' '
           << setprecision(6) << nor.at<float>(1) << ' '
-          << setprecision(6) << nor.at<float>(2) << '\n';
+          << setprecision(6) << nor.at<float>(2) << ' '
+          // RGB
+          << (int)colour[2] << ' '
+          << (int)colour[1] << ' '
+          << (int)colour[0] << ' '
+          // REFLECTANCE (not relevant but needed for MeshLab import)
+          << 1 << '\n';
     }
     f.close();
 

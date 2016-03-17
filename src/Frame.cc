@@ -36,7 +36,8 @@ Frame::Frame()
 
 //Copy Constructor
 Frame::Frame(const Frame &frame)
-    :mpORBvocabulary(frame.mpORBvocabulary), mpORBextractor(frame.mpORBextractor), im(frame.im.clone()), mTimeStamp(frame.mTimeStamp),
+    :mpORBvocabulary(frame.mpORBvocabulary), mpORBextractor(frame.mpORBextractor),
+     im(frame.im.clone()), im_rgb(frame.im_rgb.clone()), mTimeStamp(frame.mTimeStamp),
      mK(frame.mK.clone()), mDistCoef(frame.mDistCoef.clone()), N(frame.N), mvKeys(frame.mvKeys), mvKeysUn(frame.mvKeysUn),
      mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec), mDescriptors(frame.mDescriptors.clone()),
      mvpMapPoints(frame.mvpMapPoints), mvbOutlier(frame.mvbOutlier),
@@ -53,8 +54,9 @@ Frame::Frame(const Frame &frame)
 }
 
 
-Frame::Frame(cv::Mat &im_, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef)
-    :mpORBvocabulary(voc),mpORBextractor(extractor), im(im_),mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone())
+Frame::Frame(cv::Mat &im_, cv::Mat &im_rgb_, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef)
+    :mpORBvocabulary(voc),mpORBextractor(extractor), im(im_), im_rgb(im_rgb_),
+     mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone())
 {
     // Exctract ORB
     (*mpORBextractor)(im,cv::Mat(),mvKeys,mDescriptors);

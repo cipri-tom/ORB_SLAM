@@ -98,6 +98,7 @@ public:
     MapPoint* GetMapPoint(const size_t &idx);
 
     // KeyPoint functions
+    cv::KeyPoint GetKeyPoint(const size_t &idx) const;
     cv::KeyPoint GetKeyPointUn(const size_t &idx) const;
     cv::Mat GetDescriptor(const size_t &idx);
     int GetKeyPointScaleLevel(const size_t &idx) const;
@@ -108,6 +109,7 @@ public:
 
     // Image
     cv::Mat GetImage();
+    cv::Mat GetImageRGB();
     bool IsInImage(const float &x, const float &y) const;
 
     // Activate/deactivate erasable flags
@@ -185,8 +187,8 @@ protected:
     cv::Mat Tcw;
     cv::Mat Ow;
 
-    // Original image, undistorted image bounds, and calibration matrix
-    cv::Mat im;
+    // Original & RGB image, undistorted image bounds, and calibration matrix
+    cv::Mat im, im_rgb;
     int mnMinX;
     int mnMinY;
     int mnMaxX;

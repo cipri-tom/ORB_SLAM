@@ -20,7 +20,7 @@
 
 #include "MapPoint.h"
 #include "ORBmatcher.h"
-#include "ros/ros.h"
+#include "ros/console.h"
 
 namespace ORB_SLAM
 {
@@ -58,9 +58,24 @@ cv::Mat MapPoint::GetNormal()
 
 KeyFrame* MapPoint::GetReferenceKeyFrame()
 {
-     boost::mutex::scoped_lock lock(mMutexFeatures);
-     return mpRefKF;
+    boost::mutex::scoped_lock lock(mMutexFeatures);
+    return mpRefKF;
 }
+
+cv::Vec3b MapPoint::GetColorInRefKF()
+{
+    boost::mutex::scoped_lock lock(mMutexFeatures);
+    if(mObservations.count(mpRefKF) == 0) {
+        // should never be reached
+        ROS_ERROR("This point has not been observed in its RefKF.");
+        return cv::Vec3b(0,0,0);
+    }
+
+    int idx_in_KF = mObservations[mpRefKF];
+    cv::KeyPoint kp = mpRefKF->GetKeyPoint(idx_in_KF);
+    return mpRefKF->GetImageRGB().at<cv::Vec3b>(kp.pt);
+}
+
 
 void MapPoint::AddObservation(KeyFrame* pKF, size_t idx)
 {
@@ -245,7 +260,7 @@ void MapPoint::ComputeDistinctiveDescriptors()
 
     {
         boost::mutex::scoped_lock lock(mMutexFeatures);
-        mDescriptor = vDescriptors[BestIdx].clone();       
+        mDescriptor = vDescriptors[BestIdx].clone();
     }
 }
 
@@ -294,7 +309,7 @@ void MapPoint::UpdateNormalAndDepth()
         cv::Mat normali = mWorldPos - Owi;
         normal = normal + normali/cv::norm(normali);
         n++;
-    } 
+    }
 
     cv::Mat PC = Pos - pRefKF->GetCameraCenter();
     const float dist = cv::norm(PC);

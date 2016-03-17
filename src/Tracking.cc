@@ -103,7 +103,7 @@ Tracking::Tracking(ORBVocabulary* pVoc, FramePublisher *pFramePublisher, MapPubl
     int nFeatures = fSettings["ORBextractor.nFeatures"];
     float fScaleFactor = fSettings["ORBextractor.scaleFactor"];
     int nLevels = fSettings["ORBextractor.nLevels"];
-    int fastTh = fSettings["ORBextractor.fastTh"];    
+    int fastTh = fSettings["ORBextractor.fastTh"];
     int Score = fSettings["ORBextractor.nScoreType"];
 
     assert(Score==1 || Score==0);
@@ -123,7 +123,7 @@ Tracking::Tracking(ORBVocabulary* pVoc, FramePublisher *pFramePublisher, MapPubl
 
     // ORB extractor for initialization
     // Initialization uses only points from the finest scale level
-    mpIniORBextractor = new ORBextractor(nFeatures*2,1.2,8,Score,fastTh);  
+    mpIniORBextractor = new ORBextractor(nFeatures*2,1.2,8,Score,fastTh);
 
     int nMotion = fSettings["UseMotionModel"];
     mbMotionModel = nMotion;
@@ -168,7 +168,7 @@ void Tracking::Run()
 void Tracking::GrabImage(const sensor_msgs::ImageConstPtr& msg)
 {
 
-    cv::Mat im;
+    cv::Mat im, im_rgb;
 
     // Copy the ros image message to cv::Mat. Convert to grayscale if it is a color image.
     cv_bridge::CvImageConstPtr cv_ptr;
@@ -190,16 +190,18 @@ void Tracking::GrabImage(const sensor_msgs::ImageConstPtr& msg)
             cvtColor(cv_ptr->image, im, CV_RGB2GRAY);
         else
             cvtColor(cv_ptr->image, im, CV_BGR2GRAY);
+        cv_ptr->image.copyTo(im_rgb);  // TODO: RGB vs BGR
     }
     else if(cv_ptr->image.channels()==1)
     {
         cv_ptr->image.copyTo(im);
+        cvtColor(cv_ptr->image, im_rgb, CV_GRAY2BGR);
     }
 
     if(mState==WORKING || mState==LOST)
-        mCurrentFrame = Frame(im,cv_ptr->header.stamp.toSec(),mpORBextractor,mpORBVocabulary,mK,mDistCoef);
+        mCurrentFrame = Frame(im,im_rgb,cv_ptr->header.stamp.toSec(),mpORBextractor,mpORBVocabulary,mK,mDistCoef);
     else
-        mCurrentFrame = Frame(im,cv_ptr->header.stamp.toSec(),mpIniORBextractor,mpORBVocabulary,mK,mDistCoef);
+        mCurrentFrame = Frame(im,im_rgb,cv_ptr->header.stamp.toSec(),mpIniORBextractor,mpORBVocabulary,mK,mDistCoef);
 
     // Depending on the state of the Tracker we perform different tasks
 
@@ -295,7 +297,7 @@ void Tracking::GrabImage(const sensor_msgs::ImageConstPtr& msg)
         }
 
         mLastFrame = Frame(mCurrentFrame);
-     }       
+     }
 
     // Update drawer
     mpFramePublisher->Update(this);
@@ -346,7 +348,7 @@ void Tracking::Initialize()
         fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
         mState = NOT_INITIALIZED;
         return;
-    }    
+    }
 
     // Find correspondences
     ORBmatcher matcher(0.9,true);
@@ -357,7 +359,7 @@ void Tracking::Initialize()
     {
         mState = NOT_INITIALIZED;
         return;
-    }  
+    }
 
     cv::Mat Rcw; // Current Camera Rotation
     cv::Mat tcw; // Current Camera Translation
@@ -371,7 +373,7 @@ void Tracking::Initialize()
             {
                 mvIniMatches[i]=-1;
                 nmatches--;
-            }           
+            }
         }
 
         CreateInitialMap(Rcw,tcw);
@@ -704,14 +706,14 @@ void Tracking::SearchReferencePointsInFrustum()
         if(pMP->mnLastFrameSeen == mCurrentFrame.mnId)
             continue;
         if(pMP->isBad())
-            continue;        
+            continue;
         // Project (this fills MapPoint variables for matching)
         if(mCurrentFrame.isInFrustum(pMP,0.5))
         {
             pMP->IncreaseVisible();
             nToMatch++;
         }
-    }    
+    }
 
 
     if(nToMatch>0)
@@ -726,7 +728,7 @@ void Tracking::SearchReferencePointsInFrustum()
 }
 
 void Tracking::UpdateReference()
-{    
+{
     // This is for visualization
     mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
 
@@ -897,7 +899,7 @@ bool Tracking::Relocalisation()
                 vpPnPsolvers[i] = pSolver;
                 nCandidates++;
             }
-        }        
+        }
     }
 
     // Alternatively perform some iterations of P4P RANSAC
@@ -989,7 +991,7 @@ bool Tracking::Relocalisation()
 
                 // If the pose is supported by enough inliers stop ransacs and continue
                 if(nGood>=50)
-                {                    
+                {
                     bMatch = true;
                     break;
                 }
