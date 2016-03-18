@@ -38,6 +38,7 @@
 
 
 #include "Converter.h"
+#include "Exporter.h"
 
 
 using namespace std;
@@ -75,7 +76,8 @@ int main(int argc, char **argv)
     ORB_SLAM::FramePublisher FramePub;
 
     //Load ORB Vocabulary
-   /* Old version to load vocabulary using cv::FileStorage
+/*
+    Old version to load vocabulary using cv::FileStorage
     string strVocFile = ros::package::getPath("ORB_SLAM")+"/"+argv[1];
     cout << endl << "Loading ORB Vocabulary. This could take a while." << endl;
     cv::FileStorage fsVoc(strVocFile.c_str(), cv::FileStorage::READ);
@@ -87,7 +89,7 @@ int main(int argc, char **argv)
     }
     ORB_SLAM::ORBVocabulary Vocabulary;
     Vocabulary.load(fsVoc);
-    */
+*/
 
     // New version to load vocabulary from text file "Data/ORBvoc.txt".
     // If you have an own .yml vocabulary, use the function
@@ -158,65 +160,9 @@ int main(int argc, char **argv)
         r.sleep();
     }
 
-    // Save keyframe poses at the end of the execution
-    ofstream f;
-
-    vector<ORB_SLAM::KeyFrame*> vpKFs = World.GetAllKeyFrames();
-    sort(vpKFs.begin(),vpKFs.end(),ORB_SLAM::KeyFrame::lId);
-
-    cout << endl << "Saving Keyframe Trajectory to KeyFrameTrajectory.txt" << endl;
-    string strFile = ros::package::getPath("ORB_SLAM")+"/"+"KeyFrameTrajectory.txt";
-    f.open(strFile.c_str());
-    f << fixed;
-
-    for(size_t i=0; i<vpKFs.size(); i++)
-    {
-        ORB_SLAM::KeyFrame* pKF = vpKFs[i];
-
-        if(pKF->isBad())
-            continue;
-
-        cv::Mat R = pKF->GetRotation().t();
-        vector<float> q = ORB_SLAM::Converter::toQuaternion(R);
-        cv::Mat t = pKF->GetCameraCenter();
-        f << setprecision(6) << pKF->mTimeStamp << setprecision(7) << " " << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2)
-          << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
-
-    }
-    f.close();
-
-    /* ---------------------------------------------------------------------- */
-
-    cout << endl << "Saving Map Points to MapPoints.xyz" << endl;
-    strFile = ros::package::getPath("ORB_SLAM") + "/" + "MapPoints.xyz";
-    f.open(strFile.c_str());
-    f << fixed;
-
-    vector<ORB_SLAM::MapPoint*> vMPs = World.GetAllMapPoints();
-    for (vector<ORB_SLAM::MapPoint*>::iterator point = vMPs.begin(); point != vMPs.end(); ++point) {
-        if ((*point)->isBad())
-            continue;
-        cv::Mat pos = (*point)->GetWorldPos();
-        cv::Mat nor = (*point)->GetNormal();
-        cv::Vec3b colour = (*point)->GetColorInRefKF();
-
-          // POSITION
-        f << setprecision(6) << pos.at<float>(0) << ' '
-          << setprecision(6) << pos.at<float>(1) << ' '
-          << setprecision(6) << pos.at<float>(2) << ' '
-          // NORMAL
-          << setprecision(6) << nor.at<float>(0) << ' '
-          << setprecision(6) << nor.at<float>(1) << ' '
-          << setprecision(6) << nor.at<float>(2) << ' '
-          // RGB
-          << (int)colour[2] << ' '
-          << (int)colour[1] << ' '
-          << (int)colour[0] << ' '
-          // REFLECTANCE (not relevant but needed for MeshLab import)
-          << 1 << '\n';
-    }
-    f.close();
-
+    ORB_SLAM::Exporter exporter(&World);
+    exporter.WriteKeyFrames("MyKeyFrames.txt");
+    exporter.WriteMapPointsTXT();
 
     ros::shutdown();
 

@@ -44,6 +44,7 @@ src/Frame.cc
 src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
+src/Exporter.cc
 )
 rosbuild_add_boost_directories()
 rosbuild_link_boost(${PROJECT_NAME} thread)
