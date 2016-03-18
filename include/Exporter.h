@@ -10,11 +10,16 @@ class Map;
 
 class Exporter
 {
+private:
     Map *map_view;
+
+    // string(path) or base_<date>.ext
+    string GetPath(const char *path, const char *base, const char *ext = "txt") const;
 public:
     Exporter(Map *map);
-    void WriteKeyFrames(const char *path = NULL) const;
+    void WriteKeyFrames   (const char *path = NULL) const;
     void WriteMapPointsTXT(const char *path = NULL) const;
+    void WriteMapPointsPLY(const char *path = NULL) const;
 };
 
 }// namespace ORB_SLAM

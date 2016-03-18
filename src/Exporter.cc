@@ -7,9 +7,10 @@ using namespace std;
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <ros/console.h>
+#include <ros/assert.h>
 
-// #include <pcl/point_types.h>
-// #include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/io/ply_io.h>
 
 #include "Map.h"
 #include "MapPoint.h"
@@ -28,29 +29,27 @@ Exporter::Exporter(Map *map): map_view(map)
 {
 }
 
-void Exporter::WriteKeyFrames(const char *p_) const
+string Exporter::GetPath(const char *p, const char *base, const char *ext) const
 {
-    string path;
-    boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-    if (!p_)
-        path = ros::package::getPath("ORB_SLAM") + "/"
-             + "KeyFrameTrajectory_"
-             + boost::posix_time::to_simple_string(now)
-             + ".txt";
-    else
-        path = p_;
+    ROS_ASSERT_MSG(!p && !base && string(base).size() > 0, "Cannot infer path");
 
-    string msg = "Writing Key Frames to file " + path;
-    ROS_INFO("%s", msg.c_str());  // not recorded if ! ros.ok()
-    cout << msg << '\n';
-    ofstream f(path.c_str());
+    boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
+    string path = p ? p : ros::package::getPath("ORB_SLAM")
+                            + "/" + base + "_"
+                            + boost::posix_time::to_simple_string(now)
+                            + "." + ext;
+    ROS_INFO("%s", ("Writing file " + path).c_str());
+    return path;
+}
+
+void Exporter::WriteKeyFrames(const char *p) const
+{
+    ofstream f(GetPath(p, "KeyFrameTrajectory").c_str());
+    f << fixed;
 
     vector<KeyFrame*> vpKFs = map_view->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
-
-    f << fixed;
-    for(size_t i=0; i<vpKFs.size(); i++)
-    {
+    for(size_t i=0; i<vpKFs.size(); i++) {
         KeyFrame* pKF = vpKFs[i];
 
         if(pKF->isBad())
@@ -66,24 +65,11 @@ void Exporter::WriteKeyFrames(const char *p_) const
 }
 
 
-void Exporter::WriteMapPointsTXT(const char *p_) const
+void Exporter::WriteMapPointsTXT(const char *p) const
 {
-    string path;
-    boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
-    if (!p_)
-        path = ros::package::getPath("ORB_SLAM") + "/"
-             + "MapPoints_"
-             + boost::posix_time::to_simple_string(now)
-             + ".txt";
-    else
-        path = p_;
-
-    string msg = "Writing Key Frames to file " + path;
-    ROS_INFO("%s", msg.c_str());  // not recorded if ! ros.ok()
-    cout << msg << '\n';
-    ofstream f(path.c_str());
-
+    ofstream f(GetPath(p, "MapPoints").c_str());
     f << fixed;
+
     vector<MapPoint*> vMPs = map_view->GetAllMapPoints();
     for (vector<MapPoint*>::iterator point = vMPs.begin(); point != vMPs.end(); ++point) {
         if ((*point)->isBad())
@@ -109,5 +95,42 @@ void Exporter::WriteMapPointsTXT(const char *p_) const
     }
     f.close();
 }
+
+void Exporter::WriteMapPointsPLY(const char *p) const
+{
+    pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+    pcl::PointXYZRGBNormal pt;
+
+    vector<MapPoint*> vMPs = map_view->GetAllMapPoints();
+    for (vector<MapPoint*>::iterator point = vMPs.begin(); point != vMPs.end(); ++point) {
+        if ((*point)->isBad())
+            continue;
+        cv::Mat pos = (*point)->GetWorldPos();
+        cv::Mat nor = (*point)->GetNormal();
+        cv::Vec3b colour = (*point)->GetColorInRefKF();
+
+        // POSITION
+        pt.x = pos.at<float>(0);
+        pt.y = pos.at<float>(1);
+        pt.z = pos.at<float>(2);
+        // NORMAL
+        pt.normal[0] = nor.at<float>(0);
+        pt.normal[1] = nor.at<float>(1);
+        pt.normal[2] = nor.at<float>(2);
+        // RGB
+        pt.r = colour[2];
+        pt.g = colour[1];
+        pt.b = colour[0];
+        // CURVATURE -- not relevant, interpreted as REFLECTANCE
+        pt.curvature = 1.0;
+
+        cloud->points.push_back(pt);
+    }
+
+    string path = GetPath(p, "MapPoints", "ply");
+    pcl::PLYWriter writer;
+    writer.write(path, *cloud);
+}
+
 
 } // namespace ORB_SLAM

@@ -20,10 +20,13 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <signal.h>
 #include <ros/ros.h>
 #include <ros/package.h>
-#include <boost/thread.hpp>
+#include <ros/xmlrpc_manager.h>
 
+#include <boost/thread.hpp>
 #include <opencv2/core/core.hpp>
 
 #include "Tracking.h"
@@ -43,10 +46,38 @@
 
 using namespace std;
 
+// Control for graceful shutdown
+sig_atomic_t volatile G_SHUTDOWN = 0;
+void mySigintHandler(int sig)
+{
+  G_SHUTDOWN = 1;
+}
+
+void shutdownCallback(XmlRpc::XmlRpcValue& params, XmlRpc::XmlRpcValue& result)
+{
+  int num_params = 0;
+  if (params.getType() == XmlRpc::XmlRpcValue::TypeArray)
+    num_params = params.size();
+  if (num_params > 1)
+  {
+    string reason = params[1];
+    ROS_WARN("Shutdown request received. Reason: [%s]", reason.c_str());
+    G_SHUTDOWN = 1;
+  }
+
+  result = ros::xmlrpc::responseInt(1, "", 0);
+}
+
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "ORB_SLAM");
+    ros::init(argc, argv, "ORB_SLAM", ros::init_options::NoSigintHandler);
+
+    // Override shutdown handling
+    signal(SIGINT, mySigintHandler);
+    ros::XMLRPCManager::instance()->unbind("shutdown");
+    ros::XMLRPCManager::instance()->bind("shutdown", shutdownCallback);
+
     ros::start();
 
     cout << endl << "ORB-SLAM Copyright (C) 2014 Raul Mur-Artal" << endl <<
@@ -152,7 +183,7 @@ int main(int argc, char **argv)
 
     ros::Rate r(fps);
 
-    while (ros::ok())
+    while (!G_SHUTDOWN)
     {
         FramePub.Refresh();
         MapPub.Refresh();
@@ -160,9 +191,11 @@ int main(int argc, char **argv)
         r.sleep();
     }
 
+    // PRE-SHUTDOWN tasks
     ORB_SLAM::Exporter exporter(&World);
     exporter.WriteKeyFrames("MyKeyFrames.txt");
     exporter.WriteMapPointsTXT();
+    exporter.WriteMapPointsPLY();
 
     ros::shutdown();
 
