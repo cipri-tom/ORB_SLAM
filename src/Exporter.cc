@@ -91,7 +91,7 @@ void Exporter::WriteMapPointsTXT(const char *p) const
           << (int)colour[1] << ' '
           << (int)colour[0] << ' '
           // REFLECTANCE (not relevant but needed for MeshLab import)
-          << 1 << '\n';
+          << 255 << '\n';
     }
     f.close();
 }

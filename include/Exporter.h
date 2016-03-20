@@ -18,7 +18,7 @@ private:
 public:
     Exporter(Map *map);
     void WriteKeyFrames   (const char *path = NULL) const;
-    void WriteMapPointsTXT(const char *path = NULL) const;
+    void WriteMapPointsTXT(const char *path = NULL) const; // X Y Z Nx Ny Nz R G B 1
     void WriteMapPointsPLY(const char *path = NULL) const;
 };
 

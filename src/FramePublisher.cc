@@ -24,9 +24,21 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include<boost/thread.hpp>
-#include<ros/ros.h>
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+#include <sstream>
+#include <iostream>
+
 #include <cv_bridge/cv_bridge.h>
+#include <boost/thread.hpp>
+
+
+bool IsCloseTo(const cv::Point2f &p, const int click[2])
+{
+    int r = 5;
+    return click[0]-r <= p.x && p.x <= click[0]+r
+       &&  click[1]-r <= p.y && p.y <= click[1]+r;
+}
 
 namespace ORB_SLAM
 {
@@ -36,10 +48,33 @@ FramePublisher::FramePublisher()
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
     mbUpdated = true;
+    mLeftClick[0] = mLeftClick[1] = mRightClick[0] = mRightClick[1] = -1;
 
     mImagePub = mNH.advertise<sensor_msgs::Image>("ORB_SLAM/Frame",10,true);
+    mClickSub = mNH.subscribe("/clicks", 10, &FramePublisher::ProcessClick, this);
 
     PublishFrame();
+}
+
+void FramePublisher::ProcessClick(const std_msgs::String &msg)
+{
+    istringstream msg_data(msg.data), new_dist_text;
+    int xleft, yleft, xright, yright;
+    msg_data >> xleft >> yleft >> xright >> yright;
+    if (xleft < 0 && yleft < 0 && xright < 0 && yright < 0) // RESET
+        mLeftClick[0] = mLeftClick[1] = mRightClick[0] = mRightClick[1] = -1;
+    else if (xleft >= 0 && yleft >= 0) {  // only left
+        mLeftClick[0] = xleft;
+        mLeftClick[1] = yleft;
+    }
+    else if (xright >= 0 && yright >= 0) { // only right
+        mRightClick[0] = xright;
+        mRightClick[1] = yright;
+    }
+    else                                  // can't be both
+        ROS_WARN("INVALID CLICK: %s", msg.data.c_str());
+    cout << "Current clicks: " << mLeftClick[0]  << ' ' << mLeftClick[1]  << "  "
+                               << mRightClick[0] << ' ' << mRightClick[0] << '\n';
 }
 
 void FramePublisher::SetMap(Map *pMap)
@@ -75,7 +110,7 @@ cv::Mat FramePublisher::DrawFrame()
         mIm.copyTo(im);
 
         if(mState==Tracking::NOT_INITIALIZED)
-        {            
+        {
             vIniKeys = mvIniKeys;
         }
         else if(mState==Tracking::INITIALIZING)
@@ -108,7 +143,7 @@ cv::Mat FramePublisher::DrawFrame()
                 cv::line(im,vIniKeys[i].pt,vCurrentKeys[vMatches[i]].pt,
                         cv::Scalar(0,255,0));
             }
-        }        
+        }
     }
     else if(state==Tracking::WORKING) //TRACKING
     {
@@ -134,8 +169,11 @@ cv::Mat FramePublisher::DrawFrame()
 
     }
 
-    cv::Mat imWithInfo;
-    DrawTextInfo(im,state, imWithInfo);
+    cv::Mat imWithStatus, imWithInfo;
+    string status   = GetStatusText(state);
+    string distance = GetDistText(vCurrentKeys, vMatchedMapPoints, state);
+    DrawTextInfo(im          ,status  , imWithStatus);
+    DrawTextInfo(imWithStatus,distance, imWithInfo);
 
     return imWithInfo;
 }
@@ -152,7 +190,7 @@ void FramePublisher::PublishFrame()
     ros::spinOnce();
 }
 
-void FramePublisher::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
+string FramePublisher::GetStatusText(int nState) const
 {
     stringstream s;
     if(nState==Tracking::NO_IMAGES_YET)
@@ -177,13 +215,54 @@ void FramePublisher::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
         s << " LOADING ORB VOCABULARY. PLEASE WAIT...";
     }
 
+    return s.str();
+}
+
+string FramePublisher::GetDistText(const vector<cv::KeyPoint> &vCurrentKeys,
+                                   const vector<MapPoint*>    &vMatchedMapPoints,
+                                   int state) const
+{
+    if (state != Tracking::WORKING)
+        return string("[unavailable]");
+
+    int idxA = -1, idxB = -1;
+    if (vCurrentKeys.size() != vMatchedMapPoints.size())
+        ROS_ERROR("SIZES DIFFER!");
+    for (size_t i = 0; i < vCurrentKeys.size(); ++i) {
+        if (!vMatchedMapPoints[i])
+            continue;
+        if (IsCloseTo(vCurrentKeys[i].pt, mLeftClick))
+            idxA = i;
+        if (IsCloseTo(vCurrentKeys[i].pt, mRightClick))
+            idxB = i;
+    }
+    double dist = -1.0;
+    if (idxA >= 0 && idxB >= 0)
+        dist = cv::norm(vMatchedMapPoints[idxA]->GetWorldPos(),
+                        vMatchedMapPoints[idxB]->GetWorldPos());
+
+    ostringstream s;
+    s << fixed;
+    s << "Point A(" << setprecision(3) << vCurrentKeys[idxA].pt.x << ','
+                    << setprecision(3) << vCurrentKeys[idxA].pt.y << "); "
+      << "Point B(" << setprecision(3) << vCurrentKeys[idxB].pt.x << ','
+                    << setprecision(3) << vCurrentKeys[idxB].pt.y << ". "
+      << "AB=";
+    if (dist < 0) s << "[unavailable]";
+    else          s << dist;
+
+    return s.str();
+}
+
+void FramePublisher::DrawTextInfo(cv::Mat &im, string text, cv::Mat &imText)
+{
     int baseline=0;
-    cv::Size textSize = cv::getTextSize(s.str(),cv::FONT_HERSHEY_PLAIN,1,1,&baseline);
+    cv::Size textSize = cv::getTextSize(text,cv::FONT_HERSHEY_PLAIN,1,1,&baseline);
 
     imText = cv::Mat(im.rows+textSize.height+10,im.cols,im.type());
     im.copyTo(imText.rowRange(0,im.rows).colRange(0,im.cols));
     imText.rowRange(im.rows,imText.rows) = cv::Mat::zeros(textSize.height+10,im.cols,im.type());
-    cv::putText(imText,s.str(),cv::Point(5,imText.rows-5),cv::FONT_HERSHEY_PLAIN,1,cv::Scalar(255,255,255),1,8);
+    cv::putText(imText,text,cv::Point(5,imText.rows-5),cv::FONT_HERSHEY_PLAIN,1,cv::Scalar(255,255,255),1,8);
 
 }
 

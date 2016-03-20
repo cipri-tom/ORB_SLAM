@@ -26,11 +26,12 @@
 #include "Map.h"
 
 #include "ros/ros.h"
+#include "std_msgs/String.h"
 
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
 
-#include<boost/thread.hpp>
+#include <boost/thread.hpp>
 
 
 namespace ORB_SLAM
@@ -41,7 +42,7 @@ class Tracking;
 class FramePublisher
 {
 public:
-    FramePublisher();    
+    FramePublisher();
 
     void Update(Tracking *pTracker);
 
@@ -55,7 +56,12 @@ protected:
 
     void PublishFrame();
 
-    void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
+    string GetStatusText(int nState) const;
+    string GetDistText(const vector<cv::KeyPoint> &vCurrentKeys,
+                       const vector<MapPoint*>    &vMatchedMapPoints, int state) const;
+    void DrawTextInfo(cv::Mat &im, string text, cv::Mat &imText);
+
+    void ProcessClick(const std_msgs::String&);
 
     cv::Mat mIm;
     vector<cv::KeyPoint> mvCurrentKeys;
@@ -67,8 +73,11 @@ protected:
     vector<cv::KeyPoint> mvIniKeys;
     vector<int> mvIniMatches;
 
+    int mLeftClick[2], mRightClick[2]; // (x, y)
+
     ros::NodeHandle mNH;
     ros::Publisher mImagePub;
+    ros::Subscriber mClickSub;
 
     int mState;
 
