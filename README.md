@@ -1,8 +1,10 @@
 
-##Check out our new [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2)
------
+##Check out our new [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2) (Monocular, Stereo and RGB-D)
+---
 # ORB-SLAM Monocular
-#### Current version: 1.0.1 (see [Changelog.md](https://github.com/raulmur/ORB_SLAM/blob/master/Changelog.md))
+**Authors:** [Raul Mur-Artal](http://webdiis.unizar.es/~raulmur/), [Juan D. Tardos](http://webdiis.unizar.es/~jdtardos/), [J. M. M. Montiel](http://webdiis.unizar.es/~josemari/) and [Dorian Galvez-Lopez](http://doriangalvez.com/) ([DBoW2](https://github.com/dorian3d/DBoW2))
+
+**Current version:** 1.0.1 (see [Changelog.md](https://github.com/raulmur/ORB_SLAM/blob/master/Changelog.md))
 
 ORB-SLAM is a versatile and accurate Monocular SLAM solution able to compute in real-time the camera trajectory and a sparse 3D reconstruction of the scene in a wide variety of environments, ranging from small hand-held sequences to a car driven around several city blocks. It is able to close large loops and perform global relocalisation in real-time and from wide baselines.
 
@@ -10,18 +12,16 @@ See our project webpage: http://webdiis.unizar.es/~raulmur/orbslam/
 
 ###Related Publications:
 
-[1] Raúl Mur-Artal, J. M. M. Montiel and Juan D. Tardós. **ORB-SLAM: A Versatile and Accurate Monocular SLAM System**. *IEEE Transactions on Robotics,* vol. 31, no. 5, pp. 1147-1163, 2015. 
+[1] Raúl Mur-Artal, J. M. M. Montiel and Juan D. Tardós. **ORB-SLAM: A Versatile and Accurate Monocular SLAM System**. *IEEE Transactions on Robotics,* vol. 31, no. 5, pp. 1147-1163, 2015. (2015 IEEE Transactions on Robotics **Best Paper Award**). **[PDF](http://webdiis.unizar.es/~raulmur/MurMontielTardosTRO15.pdf)**.
 
-DOI: 10.1109/TRO.2015.2463671.
-
-Link to pdf: http://webdiis.unizar.es/~raulmur/MurMontielTardosTRO15.pdf
+[2] Dorian Gálvez-López and Juan D. Tardós. **Bags of Binary Words for Fast Place Recognition in Image Sequences**. *IEEE Transactions on Robotics,* vol. 28, no. 5, pp.  1188-1197, 2012. **[PDF](http://doriangalvez.com/php/dl.php?dlp=GalvezTRO12.pdf)**.
 
 
 #1. License
 
 ORB-SLAM is released under a [GPLv3 license](https://github.com/raulmur/ORB_SLAM/blob/master/License-gpl.txt). For a list of all code/library dependencies (and associated licenses), please see [Dependencies.md](https://github.com/raulmur/ORB_SLAM/blob/master/Dependencies.md).
 
-For a closed-source version of ORB-SLAM for commercial purposes, please contact the authors. 
+For a closed-source version of ORB-SLAM for commercial purposes, please contact the authors: orbslam (at) unizar (dot) es. 
 
 If you use ORB-SLAM in an academic work, please cite:
 
@@ -57,10 +57,8 @@ We use OpenCV to manipulate images and features. If you use a ROS version older 
 
 ##2.4 g2o (included in Thirdparty)
 We use a modified version of g2o (see original at https://github.com/RainerKuemmerle/g2o) to perform optimizations.
-In order to compile g2o you will need to have installed BLAS, LAPACK and Eigen3 (at least 3.1.0).
-
-	sudo apt-get install libblas-dev
-	sudo apt-get install liblapack-dev
+In order to compile g2o you will need to have installed Eigen3 (at least 3.1.0).
+	
 	sudo apt-get install libeigen3-dev
 
 ##2.5 DBoW2 (included in Thirdparty)
@@ -183,13 +181,10 @@ Please make sure you write and call your own settings file for your camera (copy
 #7. Failure Modes
 
 You should expect to achieve good results in sequences similar to those in which we show results in our paper [1], in terms of camera movement and texture in the environment. In general our Monocular SLAM solution is expected to have a bad time in the following situations:
-- Pure rotations in exploration
-- Low texture environments
+- No translation at system initialization (or too much rotation).
+- Pure rotations in exploration.
+- Low texture environments.
 - Many (or big) moving objects, especially if they move slowly.
 
 The system is able to initialize from planar and non-planar scenes. In the case of planar scenes, depending on the camera movement relative to the plane, it is possible that the system refuses to initialize, see the paper [1] for details. 
-
-#8. Need Help?
-
-If you have any trouble installing or running ORB-SLAM, contact the authors.
 
