@@ -44,11 +44,16 @@ string Exporter::GetPath(const char *p, const char *base, const char *ext) const
 
 void Exporter::WriteKeyFrames(const char *p) const
 {
+    vector<KeyFrame*> vpKFs = map_view->GetAllKeyFrames();
+    if (vpKFs.size() == 0) {  // not initialised
+        ROS_INFO("Map uninitialised. Skipping KeyFrame export");
+        return;
+    }
+    sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+
     ofstream f(GetPath(p, "KeyFrameTrajectory").c_str());
     f << fixed;
 
-    vector<KeyFrame*> vpKFs = map_view->GetAllKeyFrames();
-    sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
     for(size_t i=0; i<vpKFs.size(); i++) {
         KeyFrame* pKF = vpKFs[i];
 
@@ -67,10 +72,15 @@ void Exporter::WriteKeyFrames(const char *p) const
 
 void Exporter::WriteMapPointsTXT(const char *p) const
 {
+    vector<MapPoint*> vMPs = map_view->GetAllMapPoints();
+    if (vMPs.size() == 0) {  // not initialised
+        ROS_INFO("Map uninitialised. Skipping PLY export");
+        return;
+    }
+
     ofstream f(GetPath(p, "MapPoints").c_str());
     f << fixed;
 
-    vector<MapPoint*> vMPs = map_view->GetAllMapPoints();
     for (vector<MapPoint*>::iterator point = vMPs.begin(); point != vMPs.end(); ++point) {
         if ((*point)->isBad())
             continue;
@@ -98,10 +108,15 @@ void Exporter::WriteMapPointsTXT(const char *p) const
 
 void Exporter::WriteMapPointsPLY(const char *p) const
 {
+    vector<MapPoint*> vMPs = map_view->GetAllMapPoints();
+    if (vMPs.size() == 0) {  // not initialised
+        ROS_INFO("Map uninitialised. Skipping PLY export");
+        return;
+    }
+
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
     pcl::PointXYZRGBNormal pt;
 
-    vector<MapPoint*> vMPs = map_view->GetAllMapPoints();
     for (vector<MapPoint*>::iterator point = vMPs.begin(); point != vMPs.end(); ++point) {
         if ((*point)->isBad())
             continue;
